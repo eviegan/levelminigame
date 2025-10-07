@@ -3,25 +3,19 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Neon Orbit — Icons + Bomb</title>
+<title>Neon Orbit — Icons + Bomb (Fixed Sizes)</title>
 <style>
-  :root{
-    --bg:#090a16; --card:#0f1226; --ring:#2a2e58;
-    --ink:#eef4ff; --mut:#9fb0d9; --g1:#ff6ec4; --g2:#7873f5; --ok:#aef7c1; --bad:#ffb3be;
-  }
+  :root{ --bg:#090a16; --card:#0f1226; --ring:#2a2e58; --ink:#eef4ff; --mut:#9fb0d9; --g1:#ff6ec4; --g2:#7873f5; --ok:#aef7c1; --bad:#ffb3be; }
   *{box-sizing:border-box} html,body{height:100%}
   body{margin:0;background:radial-gradient(1100px 700px at 20% -10%, #101435 0%, #090a16 55%, #060812 100%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
   #game-root{position:fixed;inset:0}
-
   .hud{position:fixed;left:0;right:0;top:0;display:flex;gap:8px;padding:10px;pointer-events:none}
   .chip{background:rgba(12,18,48,.75);border:1px solid #223;border-radius:12px;padding:8px 10px;pointer-events:auto;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px)}
   .bar{height:10px;border-radius:999px;background:#0c1130;border:1px solid #223;overflow:hidden;width:180px}
   .bar>i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--g1),var(--g2));transition:width .2s}
-
   .overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(10,7,24,.6),rgba(9,10,22,.9))}
   .panel{width:min(540px,92%);background:var(--card);border:1px solid var(--ring);border-radius:18px;padding:22px;box-shadow:0 0 60px rgba(120,115,245,.25), inset 0 0 0 1px rgba(255,255,255,.02)}
-  h1{margin:0 0 6px;font-size:22px}.mut{color:var(--mut)}
-  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  h1{margin:0 0 6px;font-size:22px}.mut{color:var(--mut)} .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
   .btn{padding:12px 14px;background:#10163b;color:var(--ink);border:1px solid #2a2e58;border-radius:12px;cursor:pointer;font-weight:700}
   .btn[disabled]{opacity:.5;cursor:not-allowed}
   .note{font-size:12px;color:var(--mut);margin-top:6px}
@@ -58,29 +52,28 @@
 </div>
 
 <div class="flash" id="flash"></div>
-<div class="footer">Neon Orbit — icons+bomb build</div>
+<div class="footer">Neon Orbit — icons+bomb build (fixed sizes)</div>
 
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
 <script>
-/* -------------------- ASSETS (replace these 4 URLs) -------------------- */
+/* ================== CONFIG / ASSETS ================== */
 const ASSETS = {
   icons: [
-    // 🔁 Put your 3 collectible icon URLs (PNG/SVG). Example placeholders:
-    'https://ricobr.ft-crm.com/media-api/serve/31f4b97e-ea10-4991-91b2-4e2ebe31594d_Token.png',
-    'https://ricobr.ft-crm.com/media-api/serve/9cc65950-210b-4f56-995f-e4a94dd1d82c_2.png',
-    'https://ricobr.ft-crm.com/media-api/serve/75eb5a40-f5c7-417d-9bdc-10750938df03_Bonus.png'
+    'https://raw.githubusercontent.com/icons8/flat-color-icons/master/svg/like.svg',
+    'https://raw.githubusercontent.com/icons8/flat-color-icons/master/svg/idea.svg',
+    'https://raw.githubusercontent.com/icons8/flat-color-icons/master/svg/star.svg'
   ],
-  // Bomb image (front-facing is fine)
   bomb: 'https://raw.githubusercontent.com/tabler/tabler-icons/master/icons/filled/bomb.svg'
 };
-// Coin values per icon index:
-const ICON_VALUES = [1, 2, 5];
+// Force on-screen sizes (change these!)
+const ICON_SIZE = 48;   // px, collectibles
+const BOMB_SIZE = 56;   // px, hazard
+const ICON_VALUES = [1,2,5];
 
-/* -------------------- SAVE / LEVEL CONFIG -------------------- */
-const SAVE_KEY = 'neon_orbit_progress_v2';
+const SAVE_KEY = 'neon_orbit_progress_v3';
 const Save = {
   data: { level:1, xp:0, coins:0, lives:3, speed:220, magnet:0.0, best:0 },
-  load(){ try{ const raw = localStorage.getItem(SAVE_KEY); if(raw) Object.assign(this.data, JSON.parse(raw)||{});}catch(e){} },
+  load(){ try{ const raw=localStorage.getItem(SAVE_KEY); if(raw) Object.assign(this.data, JSON.parse(raw)||{});}catch(e){} },
   save(){ localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); }
 }; Save.load();
 
@@ -91,24 +84,25 @@ const Levels = [
   { goal:32, time:60, hazards:6, spawn:0.7, enemySpeed:150 },
   { goal:42, time:65, hazards:7, spawn:0.6, enemySpeed:170 },
 ];
-const xpNeeded = level => 50 + (level-1)*50;
+const xpNeeded = l => 50 + (l-1)*50;
 
+/* ================== HUD refs ================== */
 const hudLevel = document.getElementById('hudLevel');
-const xpBar = document.getElementById('xpBar');
-const hudCoins = document.getElementById('hudCoins');
-const hudLives = document.getElementById('hudLives');
+const xpBar   = document.getElementById('xpBar');
+const hudCoins= document.getElementById('hudCoins');
+const hudLives= document.getElementById('hudLives');
 const overlay = document.getElementById('overlay');
 const ovTitle = document.getElementById('ovTitle');
-const ovText = document.getElementById('ovText');
-const ovNote = document.getElementById('ovNote');
-const btnStart = document.getElementById('btnStart');
-const btnResume = document.getElementById('btnResume');
+const ovText  = document.getElementById('ovText');
+const ovNote  = document.getElementById('ovNote');
+const btnStart= document.getElementById('btnStart');
+const btnResume=document.getElementById('btnResume');
 const btnNext = document.getElementById('btnNext');
-const btnRestart = document.getElementById('btnRestart');
-const btnUS = document.getElementById('btnUpgradeSpeed');
-const btnUM = document.getElementById('btnUpgradeMagnet');
-const speedCostEl = document.getElementById('speedCost');
-const magCostEl = document.getElementById('magCost');
+const btnRestart=document.getElementById('btnRestart');
+const btnUS   = document.getElementById('btnUpgradeSpeed');
+const btnUM   = document.getElementById('btnUpgradeMagnet');
+const speedCostEl=document.getElementById('speedCost');
+const magCostEl  =document.getElementById('magCost');
 const flashEl = document.getElementById('flash');
 
 function refreshHUD(){
@@ -119,38 +113,27 @@ function refreshHUD(){
   xpBar.style.width = `${Math.min(100, (Save.data.xp/need)*100)}%`;
   const spdLvl=(Save.data.speed-220)/50, magLvl=Math.round(Save.data.magnet*10);
   speedCostEl.textContent = `Cost: ${20 + spdLvl*20}`;
-  magCostEl.textContent = `Cost: ${25 + magLvl*25}`;
+  magCostEl.textContent   = `Cost: ${25 + magLvl*25}`;
 }
 
-/* -------------------- AUDIO: tiny WebAudio beeps/boom -------------------- */
+/* ================== AUDIO (WebAudio) ================== */
 const Audio = (() => {
   const ctx = new (window.AudioContext||window.webkitAudioContext)();
-  function beep(freq=880, dur=120, type='sine', vol=.2){
-    const o=ctx.createOscillator(), g=ctx.createGain();
-    o.type=type;o.frequency.value=freq; g.gain.value=vol;
-    o.connect(g); g.connect(ctx.destination); o.start();
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur/1000);
-    o.stop(ctx.currentTime+(dur/1000)+0.01);
-  }
-  function boom(){
-    const o=ctx.createOscillator(), n=ctx.createNoise?ctx.createNoise():null;
-    const g=ctx.createGain();
-    o.type='triangle'; o.frequency.setValueAtTime(120, ctx.currentTime);
-    o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime+0.4);
-    g.gain.value=.5; o.connect(g); g.connect(ctx.destination); o.start();
-    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.45);
-    o.stop(ctx.currentTime+0.46);
-  }
-  // resume on first user gesture
   window.addEventListener('pointerdown', ()=>ctx.resume(), {once:true});
-  return { collect:()=>beep(1000,100,'sine',.15), levelUp:()=>beep(1500,150,'triangle',.2), boom };
+  function beep(f=880,d=120,t='sine',v=.2){ const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=t; o.frequency.value=f; g.gain.value=v; o.connect(g); g.connect(ctx.destination);
+    o.start(); g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+d/1000); o.stop(ctx.currentTime+d/1000+0.01); }
+  function boom(){ const o=ctx.createOscillator(), g=ctx.createGain(); o.type='triangle';
+    o.frequency.setValueAtTime(140, ctx.currentTime); o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime+.45);
+    g.gain.value=.5; o.connect(g); g.connect(ctx.destination); o.start(); g.gain.exponentialRampToValueAtTime(.0001, ctx.currentTime+.46); o.stop(ctx.currentTime+.48); }
+  return { collect:()=>beep(1000,100,'sine',.15), level:()=>beep(1500,160,'triangle',.22), boom, fail:()=>beep(120,300,'square',.25) };
 })();
 
-/* -------------------- Phaser -------------------- */
+/* ================== Phaser ================== */
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game-root',
-  width: window.innerWidth, height: window.innerHeight,
+  width: innerWidth, height: innerHeight,
   backgroundColor: '#0a0718',
   physics: { default:'arcade', arcade:{ gravity:{y:0}, debug:false } },
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
@@ -160,44 +143,35 @@ const game = new Phaser.Game({
 let player, orbs, bombs, infoText, left=0, goal=0, collected=0, hazardSpeed=120, timer, spawnTimer;
 
 function preload(){
-  // Load external images (CORS must allow it). Fallback: inline SVG circle/square if failed
-  this.textures.on('onerror', (key)=>console.warn('Texture load failed:', key));
-
-  ASSETS.icons.forEach((url, i)=> this.load.image('icon'+i, url));
+  ASSETS.icons.forEach((url,i)=> this.load.image('icon'+i,url));
   this.load.image('bomb', ASSETS.bomb);
-
-  // 1px white for particles
-  this.textures.once('onload', ()=>{
-    const c=document.createElement('canvas'); c.width=c.height=2;
-    const cx=c.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,2,2);
-    this.textures.addBase64('white', c.toDataURL());
-  });
+  // tiny 1px for particles
+  this.textures.once('onload', ()=>{ const c=document.createElement('canvas'); c.width=c.height=2; const x=c.getContext('2d'); x.fillStyle='#fff'; x.fillRect(0,0,2,2); this.textures.addBase64('white', c.toDataURL()); });
 }
 
 function create(){
-  const cw = this.scale.width, ch = this.scale.height;
+  const cw=this.scale.width, ch=this.scale.height;
+  refreshHUD();
 
-  // star field
+  // bg stars
   this.add.particles(0,0,'white',{ speed:10, lifespan:6000, quantity:1, scale:{start:.8,end:0}, alpha:.25,
     emitZone:{ type:'random', source:new Phaser.Geom.Rectangle(0,0,cw,ch)}});
 
-  // player
-  player = this.physics.add.image(cw*0.5, ch*0.5, 'white').setTint(0x78f3ff).setScale(12);
-  player.body.setCircle(12, -12, -12).setCollideWorldBounds(true);
+  // player (simple circle)
+  player = this.add.circle(cw*0.5, ch*0.5, 16, 0x78f3ff); this.physics.add.existing(player);
+  player.body.setCircle(16).setCollideWorldBounds(true);
   player.maxSpeed = Save.data.speed;
 
-  // groups
-  orbs = this.physics.add.group();
+  orbs  = this.physics.add.group();
   bombs = this.physics.add.group();
 
   // level params
-  const L = Levels[(Save.data.level-1)%Levels.length];
+  const L = Levels[(Save.data.level-1) % Levels.length];
   goal=L.goal; left=L.time; hazardSpeed=L.enemySpeed; collected=0;
 
-  spawnTimer = this.time.addEvent({ delay: L.spawn*1000, loop:true, callback: ()=> spawnIcon.call(this) });
+  spawnTimer = this.time.addEvent({ delay:L.spawn*1000, loop:true, callback:()=>spawnIcon.call(this) });
   for(let i=0;i<L.hazards;i++) spawnBomb.call(this);
 
-  // UI text
   infoText = this.add.text(12, ch-24, '', { font:'14px system-ui', fill:'#9fb0d9' }).setDepth(5);
 
   // input
@@ -213,15 +187,13 @@ function create(){
 }
 
 function update(){
-  // magnet pull
+  // magnet
   const r = 48 + 160*Save.data.magnet;
   orbs.getChildren().forEach(o=>{
-    const dx = player.x - o.x, dy = player.y - o.y, d2=dx*dx+dy*dy;
-    if(d2<r*r){
-      const v = new Phaser.Math.Vector2(dx,dy).normalize().scale(180);
+    const dx=player.x-o.x, dy=player.y-o.y, d2=dx*dx+dy*dy;
+    if(d2<r*r){ const v=new Phaser.Math.Vector2(dx,dy).normalize().scale(180);
       o.body.velocity.x += v.x * this.game.loop.delta/1000;
-      o.body.velocity.y += v.y * this.game.loop.delta/1000;
-    }
+      o.body.velocity.y += v.y * this.game.loop.delta/1000; }
   });
   infoText.setText(`Goal ${collected}/${goal} • Time ${left}s`);
 }
@@ -231,15 +203,23 @@ function moveTo(p){
   player.body.setVelocity(v.x, v.y);
 }
 
+/* ====== FIXED-SIZE SPAWNERS ====== */
 function spawnIcon(){
   const x = Phaser.Math.Between(24, this.scale.width-24);
   const y = Phaser.Math.Between(24, this.scale.height-24);
   const idx = Phaser.Math.Between(0, ASSETS.icons.length-1);
-  const s = this.physics.add.image(x,y,'icon'+idx).setScale(0.7);
+
+  const s = this.physics.add.image(x, y, 'icon'+idx);
+  // Force on-screen size regardless of source image dimensions
+  s.setDisplaySize(ICON_SIZE, ICON_SIZE);
+
+  // Round-ish hitbox matching the displayed size
+  const r = ICON_SIZE * 0.35;
+  s.body.setCircle(r, -r, -r)
+        .setBounce(1,1).setCollideWorldBounds(true)
+        .setVelocity(Phaser.Math.Between(-40,40), Phaser.Math.Between(-40,40));
+
   s.setData('value', ICON_VALUES[idx]||1);
-  s.body.setCircle(Math.max(10, s.width*0.25), -(s.width*0.25), -(s.height*0.25))
-       .setBounce(1,1).setCollideWorldBounds(true)
-       .setVelocity(Phaser.Math.Between(-40,40), Phaser.Math.Between(-40,40));
   orbs.add(s);
 }
 
@@ -247,91 +227,76 @@ function spawnBomb(){
   const pad=30;
   const x = Phaser.Math.Between(pad, this.scale.width-pad);
   const y = Phaser.Math.Between(pad, this.scale.height-pad);
-  const b = this.physics.add.image(x,y,'bomb').setScale(0.7);
-  b.body.setCircle(Math.max(12, b.width*0.25), -(b.width*0.25), -(b.height*0.25))
+
+  const b = this.physics.add.image(x, y, 'bomb');
+  b.setDisplaySize(BOMB_SIZE, BOMB_SIZE);
+
+  const r = BOMB_SIZE * 0.32;
+  b.body.setCircle(r, -r, -r)
         .setBounce(1,1).setCollideWorldBounds(true)
         .setVelocity(Phaser.Math.Between(-hazardSpeed,hazardSpeed), Phaser.Math.Between(-hazardSpeed,hazardSpeed));
+
   bombs.add(b);
 }
 
+/* ====== GAMEPLAY ====== */
 function collectIcon(orb){
   const val = orb.getData('value')||1;
   orb.destroy();
-  collected++;
-  Save.data.coins += val;
-  Save.data.xp += 4 + val; // better icon → more XP
-  // sparkle
+  collected++; Save.data.coins += val; Save.data.xp += 4 + val;
   const p = this.add.particles(orb.x, orb.y, 'white', { lifespan:400, speed:120, quantity:10, scale:{start:1,end:0}, tint:[0xff6ec4,0x7873f5]});
-  this.time.delayedCall(400, ()=> p.destroy());
+  this.time.delayedCall(400, ()=>p.destroy());
   Audio.collect();
   if(collected>=goal) levelEnd.call(this,true);
+  refreshHUD(); Save.save();
 }
 
 function hitBomb(b){
-  // explosion FX
   b.destroy();
   this.cameras.main.shake(200, 0.01);
-  flashEl.style.opacity = 0.6; requestAnimationFrame(()=> flashEl.style.opacity = 0);
-  const p = this.add.particles(b.x, b.y, 'white', { lifespan:600, speed: {min:80,max:220}, quantity:30, scale:{start:1.2,end:0}, tint:[0xff3b5a,0xffcc66,0xffffff]});
-  this.time.delayedCall(600, ()=> p.destroy());
+  flashEl.style.opacity=.6; requestAnimationFrame(()=> flashEl.style.opacity=0);
+  const p = this.add.particles(b.x, b.y, 'white', { lifespan:600, speed:{min:80,max:220}, quantity:30, scale:{start:1.2,end:0}, tint:[0xff3b5a,0xffcc66,0xffffff]});
+  this.time.delayedCall(600, ()=>p.destroy());
   Audio.boom();
 
-  if(this._inv) return;
-  this._inv = true;
-  Save.data.lives -= 1;
-  if(Save.data.lives<=0){ levelEnd.call(this,false); return; }
-  this.tweens.add({ targets: player, scale: {from:1,to:.85}, yoyo:true, duration:90, repeat:3, onComplete:()=>{ this._inv=false; }});
+  // small penalty (optional)
+  Save.data.lives = Math.max(0, Save.data.lives-1);
+  refreshHUD(); Save.save();
+  if(Save.data.lives<=0) levelEnd.call(this,false);
 }
 
 function levelEnd(win){
   this.scene.pause();
-  // Level up by XP
-  const need = xpNeeded(Save.data.level);
+  // Level up by XP if enough
   let leveled=false;
-  while(Save.data.xp >= xpNeeded(Save.data.level)){
-    Save.data.xp -= xpNeeded(Save.data.level);
-    Save.data.level++; Save.data.lives = Math.min(5, Save.data.lives+1); leveled=true;
-  }
-  if(leveled) Audio.levelUp();
+  while(Save.data.xp >= xpNeeded(Save.data.level)){ Save.data.xp -= xpNeeded(Save.data.level); Save.data.level++; Save.data.lives = Math.min(5, Save.data.lives+1); leveled=true; }
+  if(leveled) Audio.level();
   Save.save();
 
   showOverlay(win ? 'Level cleared!' : 'Level failed',
-    win ? `Collected ${collected}/${goal}.` : `Goal was ${goal}. Try again.`,
-    { next:win, restart:true, start:false, resume:false }
-  );
+              win ? `Collected ${collected}/${goal}.` : `Goal was ${goal}. Try again.`,
+              { next:win, restart:true, start:false, resume:false });
 }
 
-/* -------------------- Overlay + Buttons -------------------- */
+/* ====== Overlay controls ====== */
 function showOverlay(title, text, opts={}){
-  ovTitle.textContent = title; ovText.innerHTML = text;
-  btnStart.style.display = opts.start ? '' : 'none';
-  btnResume.style.display = opts.resume ? '' : 'none';
-  btnNext.style.display = opts.next ? '' : 'none';
-  btnRestart.style.display = opts.restart ? '' : 'none';
-  overlay.style.display = '';
-  refreshHUD(); Save.save();
+  ovTitle.textContent=title; ovText.innerHTML=text;
+  btnStart.style.display = opts.start?'':'none';
+  btnResume.style.display= opts.resume?'':'none';
+  btnNext.style.display  = opts.next?'':'none';
+  btnRestart.style.display=opts.restart?'':'none';
+  overlay.style.display='';
+  refreshHUD();
 }
 function hideOverlay(){ overlay.style.display='none'; }
-showOverlay('Neon Orbit', `Collect <b>icons</b> (3 types), avoid <b>bombs</b>.<br>Each icon has different value; bombs explode with FX & sound.`,
-            { start:true });
+showOverlay('Neon Orbit', `Collect <b>icons</b> (3 types), avoid <b>bombs</b>.<br>Each icon has different value; bombs explode with FX & sound.`, { start:true });
 
 btnStart.onclick = ()=>{ hideOverlay(); game.scene.restart(); };
-btnResume.onclick = ()=>{ hideOverlay(); game.scene.resume(); };
-btnNext.onclick = ()=>{ Save.data.level++; Save.save(); hideOverlay(); game.scene.restart(); };
-btnRestart.onclick = ()=>{ Save.data.lives=3; Save.save(); hideOverlay(); game.scene.restart(); };
+btnResume.onclick= ()=>{ hideOverlay(); game.scene.resume(); };
+btnNext.onclick  = ()=>{ Save.data.level++; Save.save(); hideOverlay(); game.scene.restart(); };
+btnRestart.onclick=()=>{ Save.data.lives=3; Save.save(); hideOverlay(); game.scene.restart(); };
 
-btnUS.onclick = ()=>{
-  const spdLvl=(Save.data.speed-220)/50, cost=20+spdLvl*20;
-  if(Save.data.coins<cost){ ovNote.textContent='Not enough coins.'; return; }
-  Save.data.coins-=cost; Save.data.speed+=50; ovNote.textContent='Speed upgraded!'; refreshHUD(); Save.save();
-};
-btnUM.onclick = ()=>{
-  const magLvl=Math.round(Save.data.magnet*10), cost=25+magLvl*25;
-  if(Save.data.coins<cost){ ovNote.textContent='Not enough coins.'; return; }
-  Save.data.coins-=cost; Save.data.magnet=Math.min(.9, Save.data.magnet+0.1); ovNote.textContent='Magnet upgraded!'; refreshHUD(); Save.save();
-};
-
-// Pause on tab hide
+// Pause when tab hidden
 document.addEventListener('visibilitychange', ()=>{
   if(document.hidden){ showOverlay('Paused','',{resume:true,restart:true}); }
 });
