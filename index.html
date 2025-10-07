@@ -3,52 +3,30 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover" />
-<title>Neon Orbit — Level Mini Game</title>
-
+<title>Neon Orbit — Icons + Bomb</title>
 <style>
   :root{
     --bg:#090a16; --card:#0f1226; --ring:#2a2e58;
-    --ink:#eef4ff; --mut:#9fb0d9; --g1:#ff6ec4; --g2:#7873f5; --a3:#78f3ff; --ok:#aef7c1; --bad:#ffb3be;
+    --ink:#eef4ff; --mut:#9fb0d9; --g1:#ff6ec4; --g2:#7873f5; --ok:#aef7c1; --bad:#ffb3be;
   }
-  *{box-sizing:border-box}
-  html,body{height:100%}
-  body{
-    margin:0; background:radial-gradient(1100px 700px at 20% -10%, #101435 0%, #090a16 55%, #060812 100%);
-    color:var(--ink); font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif; overflow:hidden;
-  }
-  #game-root{position:fixed; inset:0}
-  /* HUD */
-  .hud{
-    position:fixed; left:0; right:0; top:0; display:flex; gap:8px; padding:10px; pointer-events:none;
-  }
-  .chip{
-    background:rgba(12,18,48,.75); border:1px solid #223; border-radius:12px; padding:8px 10px; pointer-events:auto;
-    display:flex; align-items:center; gap:8px; backdrop-filter: blur(8px);
-  }
-  .chip b{font-size:14px}
-  .bar{height:10px; border-radius:999px; background:#0c1130; border:1px solid #223; overflow:hidden; width:180px}
-  .bar>i{display:block; height:100%; width:0%; background:linear-gradient(90deg,var(--g1),var(--g2)); transition:width .2s}
-  /* Overlay */
-  .overlay{
-    position:fixed; inset:0; display:grid; place-items:center; background:linear-gradient(180deg,rgba(10,7,24,.6),rgba(9,10,22,.9));
-  }
-  .panel{
-    width:min(540px,92%); background:var(--card); border:1px solid var(--ring); border-radius:18px; padding:22px;
-    box-shadow:0 0 60px rgba(120,115,245,.25), inset 0 0 0 1px rgba(255,255,255,.02);
-  }
-  h1{margin:0 0 6px; font-size:22px}
-  .mut{color:var(--mut)}
-  .row{display:flex; gap:10px; flex-wrap:wrap}
-  .btn{
-    padding:12px 14px; background:#10163b; color:var(--ink); border:1px solid #2a2e58; border-radius:12px; cursor:pointer; font-weight:700;
-  }
-  .btn[disabled]{opacity:.5; cursor:not-allowed}
-  .grid{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px}
-  .note{font-size:12px; color:var(--mut); margin-top:8px}
-  .ok{color:var(--ok)} .bad{color:var(--bad)}
-  .footer{
-    position:fixed; bottom:8px; left:0; right:0; text-align:center; color:#9fb0d9; font-size:11px; pointer-events:none;
-  }
+  *{box-sizing:border-box} html,body{height:100%}
+  body{margin:0;background:radial-gradient(1100px 700px at 20% -10%, #101435 0%, #090a16 55%, #060812 100%);color:var(--ink);font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;overflow:hidden}
+  #game-root{position:fixed;inset:0}
+
+  .hud{position:fixed;left:0;right:0;top:0;display:flex;gap:8px;padding:10px;pointer-events:none}
+  .chip{background:rgba(12,18,48,.75);border:1px solid #223;border-radius:12px;padding:8px 10px;pointer-events:auto;display:flex;align-items:center;gap:8px;backdrop-filter:blur(8px)}
+  .bar{height:10px;border-radius:999px;background:#0c1130;border:1px solid #223;overflow:hidden;width:180px}
+  .bar>i{display:block;height:100%;width:0%;background:linear-gradient(90deg,var(--g1),var(--g2));transition:width .2s}
+
+  .overlay{position:fixed;inset:0;display:grid;place-items:center;background:linear-gradient(180deg,rgba(10,7,24,.6),rgba(9,10,22,.9))}
+  .panel{width:min(540px,92%);background:var(--card);border:1px solid var(--ring);border-radius:18px;padding:22px;box-shadow:0 0 60px rgba(120,115,245,.25), inset 0 0 0 1px rgba(255,255,255,.02)}
+  h1{margin:0 0 6px;font-size:22px}.mut{color:var(--mut)}
+  .grid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px}
+  .btn{padding:12px 14px;background:#10163b;color:var(--ink);border:1px solid #2a2e58;border-radius:12px;cursor:pointer;font-weight:700}
+  .btn[disabled]{opacity:.5;cursor:not-allowed}
+  .note{font-size:12px;color:var(--mut);margin-top:6px}
+  .footer{position:fixed;bottom:8px;left:0;right:0;text-align:center;color:#9fb0d9;font-size:11px;pointer-events:none}
+  .flash{position:fixed;inset:0;background:#fff;opacity:0;pointer-events:none;transition:opacity .12s}
 </style>
 </head>
 <body>
@@ -57,60 +35,55 @@
 <!-- HUD -->
 <div class="hud" id="hud">
   <div class="chip"><span>Level</span><b id="hudLevel">1</b></div>
-  <div class="chip"><span>XP</span>
-    <div class="bar"><i id="xpBar"></i></div>
-  </div>
+  <div class="chip"><span>XP</span><div class="bar"><i id="xpBar"></i></div></div>
   <div class="chip"><span>Coins</span><b id="hudCoins">0</b></div>
   <div class="chip"><span>Lives</span><b id="hudLives">3</b></div>
 </div>
 
-<!-- Overlay Panels -->
+<!-- Overlay -->
 <div class="overlay" id="overlay">
   <div class="panel">
     <h1 id="ovTitle">Neon Orbit</h1>
-    <p class="mut" id="ovText">Drag or tap to move. Collect <b>orbs</b>, avoid <b>hazards</b>. Beat the goal to clear the level.</p>
-
+    <p class="mut" id="ovText">Drag or tap to move. Collect <b>icons</b>, avoid <b>bombs</b>. Beat the goal to clear the level.</p>
     <div class="grid">
       <button class="btn" id="btnStart">▶ Start</button>
       <button class="btn" id="btnResume" style="display:none">⏯ Resume</button>
-
       <button class="btn" id="btnUpgradeSpeed">⚡ Speed +1<br><span class="note" id="speedCost">Cost: 20</span></button>
       <button class="btn" id="btnUpgradeMagnet">🧲 Magnet +10%<br><span class="note" id="magCost">Cost: 25</span></button>
-
       <button class="btn" id="btnNext" style="display:none">➡ Next Level</button>
       <button class="btn" id="btnRestart" style="display:none">↻ Restart</button>
     </div>
-
     <div class="note" id="ovNote"></div>
   </div>
 </div>
 
-<div class="footer">Neon Orbit — demo build</div>
+<div class="flash" id="flash"></div>
+<div class="footer">Neon Orbit — icons+bomb build</div>
 
-<!-- Phaser -->
 <script src="https://cdn.jsdelivr.net/npm/phaser@3.80.0/dist/phaser.js"></script>
 <script>
-/* =======================
-   Minimal “advanced” level game in one file
-   ======================= */
-
-const SAVE_KEY = 'neon_orbit_progress_v1';
-const W = window.innerWidth, H = window.innerHeight;
-
-// --- Save / Load ---
-const Save = {
-  data: { level:1, xp:0, coins:0, lives:3, speed:200, magnet:0.0, best:0 },
-  load(){
-    try{
-      const raw = localStorage.getItem(SAVE_KEY);
-      if(raw){ Object.assign(this.data, JSON.parse(raw)||{}); }
-    }catch(e){}
-  },
-  save(){ localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); }
+/* -------------------- ASSETS (replace these 4 URLs) -------------------- */
+const ASSETS = {
+  icons: [
+    // 🔁 Put your 3 collectible icon URLs (PNG/SVG). Example placeholders:
+    'https://ricobr.ft-crm.com/media-api/serve/31f4b97e-ea10-4991-91b2-4e2ebe31594d_Token.png',
+    'https://ricobr.ft-crm.com/media-api/serve/9cc65950-210b-4f56-995f-e4a94dd1d82c_2.png',
+    'https://ricobr.ft-crm.com/media-api/serve/75eb5a40-f5c7-417d-9bdc-10750938df03_Bonus.png'
+  ],
+  // Bomb image (front-facing is fine)
+  bomb: 'https://raw.githubusercontent.com/tabler/tabler-icons/master/icons/filled/bomb.svg'
 };
-Save.load();
+// Coin values per icon index:
+const ICON_VALUES = [1, 2, 5];
 
-// --- Level config ---
+/* -------------------- SAVE / LEVEL CONFIG -------------------- */
+const SAVE_KEY = 'neon_orbit_progress_v2';
+const Save = {
+  data: { level:1, xp:0, coins:0, lives:3, speed:220, magnet:0.0, best:0 },
+  load(){ try{ const raw = localStorage.getItem(SAVE_KEY); if(raw) Object.assign(this.data, JSON.parse(raw)||{});}catch(e){} },
+  save(){ localStorage.setItem(SAVE_KEY, JSON.stringify(this.data)); }
+}; Save.load();
+
 const Levels = [
   { goal:12, time:45, hazards:3, spawn:1.0, enemySpeed:90 },
   { goal:18, time:50, hazards:4, spawn:0.9, enemySpeed:110 },
@@ -118,11 +91,8 @@ const Levels = [
   { goal:32, time:60, hazards:6, spawn:0.7, enemySpeed:150 },
   { goal:42, time:65, hazards:7, spawn:0.6, enemySpeed:170 },
 ];
+const xpNeeded = level => 50 + (level-1)*50;
 
-function xpNeeded(level){ return 50 + (level-1)*50; }
-function fmt(n){ return Math.floor(n); }
-
-// --- UI refs ---
 const hudLevel = document.getElementById('hudLevel');
 const xpBar = document.getElementById('xpBar');
 const hudCoins = document.getElementById('hudCoins');
@@ -139,230 +109,231 @@ const btnUS = document.getElementById('btnUpgradeSpeed');
 const btnUM = document.getElementById('btnUpgradeMagnet');
 const speedCostEl = document.getElementById('speedCost');
 const magCostEl = document.getElementById('magCost');
-
-function upgradeCosts(){
-  const spdLvl = (Save.data.speed-200)/50; // 0,1,2...
-  const magLvl = Math.round(Save.data.magnet*10); // 0..?
-  return { speed: 20 + spdLvl*20, magnet: 25 + magLvl*25 };
-}
+const flashEl = document.getElementById('flash');
 
 function refreshHUD(){
   hudLevel.textContent = Save.data.level;
-  hudCoins.textContent = fmt(Save.data.coins);
+  hudCoins.textContent = Math.floor(Save.data.coins);
   hudLives.textContent = Save.data.lives;
   const need = xpNeeded(Save.data.level);
   xpBar.style.width = `${Math.min(100, (Save.data.xp/need)*100)}%`;
-  const {speed, magnet} = upgradeCosts();
-  speedCostEl.textContent = `Cost: ${speed}`;
-  magCostEl.textContent = `Cost: ${magnet}`;
-}
-refreshHUD();
-
-// --- Phaser Game ---
-class PlayScene extends Phaser.Scene{
-  constructor(){ super('play'); }
-
-  create(){
-    const cw = this.scale.width, ch = this.scale.height;
-
-    // Background stars
-    this.add.particles(0,0,'white',
-      { speed:10, lifespan:6000, quantity:1, scale:{start:.8,end:0}, alpha:.25, emitZone: { type:'random', source: new Phaser.Geom.Rectangle(0,0,cw,ch) } });
-
-    // Player (vector circle)
-    this.player = this.add.circle(cw*0.5, ch*0.5, 16, 0x78f3ff);
-    this.physics.add.existing(this.player);
-    this.player.body.setCircle(16).setCollideWorldBounds(true);
-    this.playerSpeed = Save.data.speed;
-
-    // Groups
-    this.orbs = this.physics.add.group();
-    this.haz = this.physics.add.group();
-
-    // Timers
-    const L = Levels[(Save.data.level-1) % Levels.length];
-    this.goal = L.goal;
-    this.left = L.time;
-    this.collected = 0;
-    this.hazardSpeed = L.enemySpeed;
-    this.spawnTimer = this.time.addEvent({ delay: L.spawn*1000, loop:true, callback: ()=> this.spawnOrb() });
-    for(let i=0;i<L.hazards;i++){ this.spawnHazard(); }
-
-    // Texts
-    this.info = this.add.text(12, ch-24, '', { font:'14px system-ui', fill:'#9fb0d9' }).setDepth(5);
-
-    // Collisions
-    this.physics.add.overlap(this.player, this.orbs, (_p, orb)=> this.collectOrb(orb));
-    this.physics.add.overlap(this.player, this.haz, (_p, hz)=> this.hitHazard(hz));
-
-    // Input (drag or pointer)
-    this.input.on('pointerdown', p=> this.moveTo(p));
-    this.input.on('pointermove', p=> { if(p.isDown) this.moveTo(p); });
-
-    // Countdown
-    this.timer = this.time.addEvent({ delay:1000, loop:true, callback:()=>{
-      this.left--;
-      if(this.left<=0){ this.levelEnd(false); }
-    }});
-  }
-
-  moveTo(pointer){
-    const v = new Phaser.Math.Vector2(pointer.x - this.player.x, pointer.y - this.player.y);
-    v.normalize().scale(this.playerSpeed);
-    this.player.body.setVelocity(v.x, v.y);
-  }
-
-  spawnOrb(){
-    const x = Phaser.Math.Between(24, this.scale.width-24);
-    const y = Phaser.Math.Between(24, this.scale.height-24);
-    const orb = this.add.circle(x,y,10,0xff6ec4);
-    this.orbs.add(orb);
-    orb.body = this.physics.add.existing(orb).body;
-    orb.body.setCircle(10).setImmovable(true);
-    // drift
-    orb.body.setVelocity(Phaser.Math.Between(-40,40), Phaser.Math.Between(-40,40)).setBounce(1,1).setCollideWorldBounds(true);
-  }
-
-  spawnHazard(){
-    const pad=20;
-    const x = Phaser.Math.Between(pad,this.scale.width-pad);
-    const y = Phaser.Math.Between(pad,this.scale.height-pad);
-    const hz = this.add.triangle(x,y, 0,18, 36,18, 18,0, 0xff596a);
-    this.haz.add(hz);
-    this.physics.add.existing(hz);
-    hz.body.setVelocity(Phaser.Math.Between(-this.hazardSpeed,this.hazardSpeed), Phaser.Math.Between(-this.hazardSpeed,this.hazardSpeed))
-      .setBounce(1,1).setCollideWorldBounds(true);
-  }
-
-  collectOrb(orb){
-    orb.destroy();
-    this.collected++;
-    Save.data.coins += 1;
-    Save.data.xp += 5;
-    // particle pop
-    const p = this.add.particles(orb.x, orb.y, 'white', { lifespan:400, speed:120, quantity:8, scale:{start:1,end:0}});
-    this.time.delayedCall(400, ()=> p.destroy());
-    if(this.collected >= this.goal){ this.levelEnd(true); }
-  }
-
-  hitHazard(hz){
-    hz.body.velocity.scale(-1); // bounce back
-    if(this._invuln) return;
-    this._invuln = true;
-    this.tweens.add({ targets:this.player, scale:0.8, yoyo:true, duration:80, repeat:3 });
-    Save.data.lives -= 1;
-    if(Save.data.lives <= 0){ this.levelEnd(false); }
-    this.time.delayedCall(800, ()=> this._invuln = false);
-  }
-
-  applyMagnet(){
-    const r = 48 + 160*Save.data.magnet; // grows with magnet %
-    this.orbs.getChildren().forEach(o=>{
-      const dx = this.player.x - o.x, dy = this.player.y - o.y;
-      const d2 = dx*dx + dy*dy;
-      if(d2 < r*r){
-        const v = new Phaser.Math.Vector2(dx,dy).normalize().scale(160);
-        o.body.velocity.x += v.x * this.game.loop.delta/1000;
-        o.body.velocity.y += v.y * this.game.loop.delta/1000;
-      }
-    });
-  }
-
-  levelEnd(win){
-    this.scene.pause();
-    Save.save();
-    showOverlay(win ? 'Level cleared!' : 'Level failed',
-      win ? `You collected ${this.collected}/${this.goal}. +XP +Coins` :
-            `Goal was ${this.goal}. Try again.`,
-      { next:win, restart:true, resume:false }
-    );
-  }
-
-  update(){
-    this.applyMagnet();
-    this.info.setText(`Goal ${this.collected}/${this.goal} • Time ${this.left}s`);
-  }
+  const spdLvl=(Save.data.speed-220)/50, magLvl=Math.round(Save.data.magnet*10);
+  speedCostEl.textContent = `Cost: ${20 + spdLvl*20}`;
+  magCostEl.textContent = `Cost: ${25 + magLvl*25}`;
 }
 
-// Boot + Phaser config
+/* -------------------- AUDIO: tiny WebAudio beeps/boom -------------------- */
+const Audio = (() => {
+  const ctx = new (window.AudioContext||window.webkitAudioContext)();
+  function beep(freq=880, dur=120, type='sine', vol=.2){
+    const o=ctx.createOscillator(), g=ctx.createGain();
+    o.type=type;o.frequency.value=freq; g.gain.value=vol;
+    o.connect(g); g.connect(ctx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+dur/1000);
+    o.stop(ctx.currentTime+(dur/1000)+0.01);
+  }
+  function boom(){
+    const o=ctx.createOscillator(), n=ctx.createNoise?ctx.createNoise():null;
+    const g=ctx.createGain();
+    o.type='triangle'; o.frequency.setValueAtTime(120, ctx.currentTime);
+    o.frequency.exponentialRampToValueAtTime(40, ctx.currentTime+0.4);
+    g.gain.value=.5; o.connect(g); g.connect(ctx.destination); o.start();
+    g.gain.exponentialRampToValueAtTime(0.0001, ctx.currentTime+0.45);
+    o.stop(ctx.currentTime+0.46);
+  }
+  // resume on first user gesture
+  window.addEventListener('pointerdown', ()=>ctx.resume(), {once:true});
+  return { collect:()=>beep(1000,100,'sine',.15), levelUp:()=>beep(1500,150,'triangle',.2), boom };
+})();
+
+/* -------------------- Phaser -------------------- */
 const game = new Phaser.Game({
   type: Phaser.AUTO,
   parent: 'game-root',
-  width: W, height: H,
+  width: window.innerWidth, height: window.innerHeight,
   backgroundColor: '#0a0718',
   physics: { default:'arcade', arcade:{ gravity:{y:0}, debug:false } },
   scale: { mode: Phaser.Scale.RESIZE, autoCenter: Phaser.Scale.CENTER_BOTH },
-  scene: [PlayScene],
+  scene: { preload, create, update }
 });
 
-// Tiny 1px texture for particles (no external assets)
-game.textures.once('onload', ()=>{
-  const g = document.createElement('canvas'); g.width=g.height=2;
-  const cx = g.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,2,2);
-  game.textures.addBase64('white', g.toDataURL());
-});
+let player, orbs, bombs, infoText, left=0, goal=0, collected=0, hazardSpeed=120, timer, spawnTimer;
 
-// --- Overlay control ---
+function preload(){
+  // Load external images (CORS must allow it). Fallback: inline SVG circle/square if failed
+  this.textures.on('onerror', (key)=>console.warn('Texture load failed:', key));
+
+  ASSETS.icons.forEach((url, i)=> this.load.image('icon'+i, url));
+  this.load.image('bomb', ASSETS.bomb);
+
+  // 1px white for particles
+  this.textures.once('onload', ()=>{
+    const c=document.createElement('canvas'); c.width=c.height=2;
+    const cx=c.getContext('2d'); cx.fillStyle='#fff'; cx.fillRect(0,0,2,2);
+    this.textures.addBase64('white', c.toDataURL());
+  });
+}
+
+function create(){
+  const cw = this.scale.width, ch = this.scale.height;
+
+  // star field
+  this.add.particles(0,0,'white',{ speed:10, lifespan:6000, quantity:1, scale:{start:.8,end:0}, alpha:.25,
+    emitZone:{ type:'random', source:new Phaser.Geom.Rectangle(0,0,cw,ch)}});
+
+  // player
+  player = this.physics.add.image(cw*0.5, ch*0.5, 'white').setTint(0x78f3ff).setScale(12);
+  player.body.setCircle(12, -12, -12).setCollideWorldBounds(true);
+  player.maxSpeed = Save.data.speed;
+
+  // groups
+  orbs = this.physics.add.group();
+  bombs = this.physics.add.group();
+
+  // level params
+  const L = Levels[(Save.data.level-1)%Levels.length];
+  goal=L.goal; left=L.time; hazardSpeed=L.enemySpeed; collected=0;
+
+  spawnTimer = this.time.addEvent({ delay: L.spawn*1000, loop:true, callback: ()=> spawnIcon.call(this) });
+  for(let i=0;i<L.hazards;i++) spawnBomb.call(this);
+
+  // UI text
+  infoText = this.add.text(12, ch-24, '', { font:'14px system-ui', fill:'#9fb0d9' }).setDepth(5);
+
+  // input
+  this.input.on('pointerdown', p=> moveTo.call(this,p));
+  this.input.on('pointermove', p=> { if(p.isDown) moveTo.call(this,p); });
+
+  // collisions
+  this.physics.add.overlap(player, orbs, (_p, orb)=> collectIcon.call(this, orb));
+  this.physics.add.overlap(player, bombs, (_p, b)=> hitBomb.call(this, b));
+
+  // countdown
+  timer = this.time.addEvent({ delay:1000, loop:true, callback:()=>{ left--; if(left<=0) levelEnd.call(this,false); }});
+}
+
+function update(){
+  // magnet pull
+  const r = 48 + 160*Save.data.magnet;
+  orbs.getChildren().forEach(o=>{
+    const dx = player.x - o.x, dy = player.y - o.y, d2=dx*dx+dy*dy;
+    if(d2<r*r){
+      const v = new Phaser.Math.Vector2(dx,dy).normalize().scale(180);
+      o.body.velocity.x += v.x * this.game.loop.delta/1000;
+      o.body.velocity.y += v.y * this.game.loop.delta/1000;
+    }
+  });
+  infoText.setText(`Goal ${collected}/${goal} • Time ${left}s`);
+}
+
+function moveTo(p){
+  const v = new Phaser.Math.Vector2(p.x-player.x, p.y-player.y).normalize().scale(player.maxSpeed);
+  player.body.setVelocity(v.x, v.y);
+}
+
+function spawnIcon(){
+  const x = Phaser.Math.Between(24, this.scale.width-24);
+  const y = Phaser.Math.Between(24, this.scale.height-24);
+  const idx = Phaser.Math.Between(0, ASSETS.icons.length-1);
+  const s = this.physics.add.image(x,y,'icon'+idx).setScale(0.7);
+  s.setData('value', ICON_VALUES[idx]||1);
+  s.body.setCircle(Math.max(10, s.width*0.25), -(s.width*0.25), -(s.height*0.25))
+       .setBounce(1,1).setCollideWorldBounds(true)
+       .setVelocity(Phaser.Math.Between(-40,40), Phaser.Math.Between(-40,40));
+  orbs.add(s);
+}
+
+function spawnBomb(){
+  const pad=30;
+  const x = Phaser.Math.Between(pad, this.scale.width-pad);
+  const y = Phaser.Math.Between(pad, this.scale.height-pad);
+  const b = this.physics.add.image(x,y,'bomb').setScale(0.7);
+  b.body.setCircle(Math.max(12, b.width*0.25), -(b.width*0.25), -(b.height*0.25))
+        .setBounce(1,1).setCollideWorldBounds(true)
+        .setVelocity(Phaser.Math.Between(-hazardSpeed,hazardSpeed), Phaser.Math.Between(-hazardSpeed,hazardSpeed));
+  bombs.add(b);
+}
+
+function collectIcon(orb){
+  const val = orb.getData('value')||1;
+  orb.destroy();
+  collected++;
+  Save.data.coins += val;
+  Save.data.xp += 4 + val; // better icon → more XP
+  // sparkle
+  const p = this.add.particles(orb.x, orb.y, 'white', { lifespan:400, speed:120, quantity:10, scale:{start:1,end:0}, tint:[0xff6ec4,0x7873f5]});
+  this.time.delayedCall(400, ()=> p.destroy());
+  Audio.collect();
+  if(collected>=goal) levelEnd.call(this,true);
+}
+
+function hitBomb(b){
+  // explosion FX
+  b.destroy();
+  this.cameras.main.shake(200, 0.01);
+  flashEl.style.opacity = 0.6; requestAnimationFrame(()=> flashEl.style.opacity = 0);
+  const p = this.add.particles(b.x, b.y, 'white', { lifespan:600, speed: {min:80,max:220}, quantity:30, scale:{start:1.2,end:0}, tint:[0xff3b5a,0xffcc66,0xffffff]});
+  this.time.delayedCall(600, ()=> p.destroy());
+  Audio.boom();
+
+  if(this._inv) return;
+  this._inv = true;
+  Save.data.lives -= 1;
+  if(Save.data.lives<=0){ levelEnd.call(this,false); return; }
+  this.tweens.add({ targets: player, scale: {from:1,to:.85}, yoyo:true, duration:90, repeat:3, onComplete:()=>{ this._inv=false; }});
+}
+
+function levelEnd(win){
+  this.scene.pause();
+  // Level up by XP
+  const need = xpNeeded(Save.data.level);
+  let leveled=false;
+  while(Save.data.xp >= xpNeeded(Save.data.level)){
+    Save.data.xp -= xpNeeded(Save.data.level);
+    Save.data.level++; Save.data.lives = Math.min(5, Save.data.lives+1); leveled=true;
+  }
+  if(leveled) Audio.levelUp();
+  Save.save();
+
+  showOverlay(win ? 'Level cleared!' : 'Level failed',
+    win ? `Collected ${collected}/${goal}.` : `Goal was ${goal}. Try again.`,
+    { next:win, restart:true, start:false, resume:false }
+  );
+}
+
+/* -------------------- Overlay + Buttons -------------------- */
 function showOverlay(title, text, opts={}){
-  ovTitle.textContent = title;
-  ovText.innerHTML = text;
+  ovTitle.textContent = title; ovText.innerHTML = text;
   btnStart.style.display = opts.start ? '' : 'none';
   btnResume.style.display = opts.resume ? '' : 'none';
   btnNext.style.display = opts.next ? '' : 'none';
   btnRestart.style.display = opts.restart ? '' : 'none';
   overlay.style.display = '';
-  refreshHUD();
-  const need = xpNeeded(Save.data.level);
-  // Level up if enough XP
-  while(Save.data.xp >= need){
-    Save.data.xp -= need;
-    Save.data.level++;
-    Save.data.lives = Math.min(5, Save.data.lives+1);
-  }
-  Save.save();
+  refreshHUD(); Save.save();
 }
-
 function hideOverlay(){ overlay.style.display='none'; }
+showOverlay('Neon Orbit', `Collect <b>icons</b> (3 types), avoid <b>bombs</b>.<br>Each icon has different value; bombs explode with FX & sound.`,
+            { start:true });
 
-// Initial overlay
-showOverlay('Neon Orbit', `Drag or tap to move.<br>Collect <b>orbs</b>, avoid <b>hazards</b>.<br>Beat the goal before time runs out.`,
-            { start:true, resume:false, next:false, restart:false });
-
-// Buttons
-btnStart.onclick = ()=>{ hideOverlay(); startLevel(true); };
-btnResume.onclick = ()=>{ hideOverlay(); game.scene.resume('play'); };
-btnNext.onclick = ()=>{ Save.data.level++; Save.save(); hideOverlay(); startLevel(true); };
-btnRestart.onclick = ()=>{ Save.data.lives = 3; Save.save(); hideOverlay(); startLevel(true); };
+btnStart.onclick = ()=>{ hideOverlay(); game.scene.restart(); };
+btnResume.onclick = ()=>{ hideOverlay(); game.scene.resume(); };
+btnNext.onclick = ()=>{ Save.data.level++; Save.save(); hideOverlay(); game.scene.restart(); };
+btnRestart.onclick = ()=>{ Save.data.lives=3; Save.save(); hideOverlay(); game.scene.restart(); };
 
 btnUS.onclick = ()=>{
-  const cost = upgradeCosts().speed;
-  if(Save.data.coins < cost){ ovNote.textContent = 'Not enough coins.'; return; }
-  Save.data.coins -= cost;
-  Save.data.speed += 50; // +50 px/s
-  Save.save(); refreshHUD();
-  ovNote.textContent = 'Speed upgraded!';
+  const spdLvl=(Save.data.speed-220)/50, cost=20+spdLvl*20;
+  if(Save.data.coins<cost){ ovNote.textContent='Not enough coins.'; return; }
+  Save.data.coins-=cost; Save.data.speed+=50; ovNote.textContent='Speed upgraded!'; refreshHUD(); Save.save();
 };
 btnUM.onclick = ()=>{
-  const cost = upgradeCosts().magnet;
-  if(Save.data.coins < cost){ ovNote.textContent = 'Not enough coins.'; return; }
-  Save.data.coins -= cost;
-  Save.data.magnet = Math.min(.9, Save.data.magnet + 0.1); // +10%
-  Save.save(); refreshHUD();
-  ovNote.textContent = 'Magnet upgraded!';
+  const magLvl=Math.round(Save.data.magnet*10), cost=25+magLvl*25;
+  if(Save.data.coins<cost){ ovNote.textContent='Not enough coins.'; return; }
+  Save.data.coins-=cost; Save.data.magnet=Math.min(.9, Save.data.magnet+0.1); ovNote.textContent='Magnet upgraded!'; refreshHUD(); Save.save();
 };
 
-function startLevel(resetLives){
-  if(resetLives) Save.data.lives = Math.max(3, Save.data.lives);
-  refreshHUD();
-  const play = game.scene.getScene('play');
-  if(play) game.scene.remove('play');
-  game.scene.add('play', PlayScene, true);
-}
-
-// Pause when overlay is visible
+// Pause on tab hide
 document.addEventListener('visibilitychange', ()=>{
-  const play = game.scene.getScene('play');
-  if(document.hidden && play) { game.scene.pause('play'); btnResume.style.display=''; overlay.style.display=''; ovTitle.textContent='Paused'; ovText.textContent=''; btnStart.style.display='none'; btnNext.style.display='none'; btnRestart.style.display=''; }
+  if(document.hidden){ showOverlay('Paused','',{resume:true,restart:true}); }
 });
 </script>
 </body>
